@@ -5,6 +5,7 @@ window.ILW = window.ILW || {};
     const DB_VERSION = 2;
     const STORE_NAME = 'letters';
     const FALLBACK_KEY = 'ilw_letters_fallback';
+    const EMERGENCY_KEY = 'ilw_emergency_draft';
     let db = null;
 
     function persistFallback(letters) {
@@ -24,6 +25,29 @@ window.ILW = window.ILW || {};
                 : [];
         } catch (err) {
             return [];
+        }
+    }
+
+    // Synchronous emergency snapshot for sudden app/tab close (Android/iOS/PC)
+    function saveEmergencyDraftSync(letter) {
+        try {
+            if (letter) {
+                localStorage.setItem(EMERGENCY_KEY, JSON.stringify(letter));
+            }
+        } catch (err) {
+            // Ignore storage restrictions
+        }
+    }
+
+    function consumeEmergencyDraft() {
+        try {
+            const raw = localStorage.getItem(EMERGENCY_KEY);
+            if (!raw) return null;
+            localStorage.removeItem(EMERGENCY_KEY);
+            const parsed = JSON.parse(raw);
+            return parsed && parsed.id ? parsed : null;
+        } catch (err) {
+            return null;
         }
     }
 
@@ -137,6 +161,8 @@ window.ILW = window.ILW || {};
         saveLetter,
         getAllLetters,
         deleteLetter,
-        persistFallback
+        persistFallback,
+        saveEmergencyDraftSync,
+        consumeEmergencyDraft
     };
 })(window.ILW);

@@ -101,7 +101,27 @@ window.ILW = window.ILW || {};
         window.addEventListener('touchcancel', stop);
     }
 
+    function downloadLetterById(id) {
+        ILW.state.openDropdownId = null;
+        ILW.homeGrid.render();
+        const letter = ILW.state.letters.find((l) => l.id === id);
+        if (!letter) return;
+        const combined = letter.rightText ? `${letter.leftText}\n\n--------------------\n\n${letter.rightText}` : (letter.leftText || '');
+        const clean = (letter.title || '').trim().replace(/[^a-z0-9_\-\s]/gi, '_');
+        ILW.triggerTextDownload(combined, clean ? `${clean}.txt` : `letter-${letter.id}.txt`);
+    }
+
+    function downloadCurrentLetter() {
+        const left = ILW.dom.editorLeft.value;
+        const right = ILW.dom.editorRight.value;
+        const combined = right ? `${left}\n\n--------------------\n\n${right}` : left;
+        const clean = (ILW.dom.letterTitleInput.value || '').trim().replace(/[^a-z0-9_\-\s]/gi, '_');
+        ILW.triggerTextDownload(combined, clean ? `${clean}.txt` : `letter-${Date.now()}.txt`);
+    }
+
     ILW.editor = Object.assign(ILW.editor || {}, {
+        downloadLetterById,
+        downloadCurrentLetter,
         pasteToPane,
         copyFromPane,
         clearPane,

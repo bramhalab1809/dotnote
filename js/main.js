@@ -2,9 +2,9 @@ window.ILW = window.ILW || {};
 
 (function (ILW) {
     function bindEvents() {
-        // Home main circular buttons
-        document.getElementById('btn-open-single').addEventListener('click', () => ILW.editor.openEditor('single'));
-        document.getElementById('btn-open-split').addEventListener('click', () => ILW.editor.openEditor('split'));
+        // Home main circular buttons always open a fresh blank draft
+        document.getElementById('btn-open-single').addEventListener('click', () => ILW.editor.startFreshEditor('single'));
+        document.getElementById('btn-open-split').addEventListener('click', () => ILW.editor.startFreshEditor('split'));
         document.getElementById('btn-open-settings').addEventListener('click', () => ILW.ui.toggleSettings(true));
 
         // Editor top toolbar
@@ -98,23 +98,25 @@ window.ILW = window.ILW || {};
         await ILW.db.init();
         ILW.state.letters = await ILW.db.getAllLetters();
 
-        if (ILW.state.letters.length === 0) {
-            const now = Date.now();
-            const firstLetter = {
-                id: now.toString(),
-                title: '',
-                leftText: '',
-                rightText: '',
-                createdAt: now,
-                updatedAt: now
-            };
-            ILW.state.letters.push(firstLetter);
-            await ILW.db.saveLetter(firstLetter, ILW.state.letters);
+        // Recover any draft captured during a sudden app/tab close
+        const recovered = ILW.db.consumeEmergencyDraft();
+        if (recovered) {
+            const idx = ILW.state.letters.findIndex((l) => l.id === recovered.id);
+            if (idx === -1) {
+                ILW.state.letters.unshift(recovered);
+                await ILW.db.saveLetter(recovered, ILW.state.letters);
+            } else if ((recovered.updatedAt || 0) >= (ILW.state.letters[idx].updatedAt || 0)) {
+                ILW.state.letters[idx] = recovered;
+                await ILW.db.saveLetter(recovered, ILW.state.letters);
+            }
+            ILW.state.letters.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         }
 
         ILW.rebuildUserWordCache();
-        ILW.state.currentLetterId = ILW.state.letters[0].id;
-        ILW.editor.loadLetterIntoEditors(ILW.state.currentLetterId);
+        if (ILW.state.letters.length > 0) {
+            ILW.state.currentLetterId = ILW.state.letters[0].id;
+            ILW.editor.loadLetterIntoEditors(ILW.state.currentLetterId);
+        }
         ILW.ui.renderAllLists();
         ILW.editor.setupAutoSave();
         ILW.editor.setupResizer();

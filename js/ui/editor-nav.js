@@ -4,6 +4,10 @@ window.ILW = window.ILW || {};
     let saveTimeout = null;
     let saveIndicatorTimer = null;
 
+    function hasDraftContent(title, left, right) {
+        return Boolean((title || '').trim() || (left || '').trim() || (right || '').trim());
+    }
+
     function updateModeSwitchIcon() {
         const btn = ILW.dom.modeSwitchBtn;
         const isMobile = window.innerWidth < 768;
@@ -43,7 +47,18 @@ window.ILW = window.ILW || {};
         updateSplitUI();
     }
 
+    // Always opens a fresh blank draft when clicking Single/Split on Home
+    function startFreshEditor(mode) {
+        ILW.state.currentLetterId = Date.now().toString();
+        ILW.dom.letterTitleInput.value = '';
+        ILW.dom.editorLeft.value = '';
+        ILW.dom.editorRight.value = '';
+        openEditor(mode);
+        setTimeout(() => ILW.dom.editorLeft.focus(), 40);
+    }
+
     async function goHome() {
+        clearTimeout(saveTimeout);
         await saveCurrentNow();
         if (ILW.suggestions) ILW.suggestions.hide();
         ILW.state.openDropdownId = null;
@@ -72,19 +87,39 @@ window.ILW = window.ILW || {};
         if (ILW.suggestions) ILW.suggestions.hide();
     }
 
-    async function saveCurrentNow() {
+    function buildActiveDraftRecord() {
+        const title = ILW.dom.letterTitleInput.value;
+        const leftText = ILW.dom.editorLeft.value;
+        const rightText = ILW.dom.editorRight.value;
         const { currentLetterId, letters } = ILW.state;
-        if (!currentLetterId) return;
-        const letter = letters.find((l) => l.id === currentLetterId);
+        if (!currentLetterId) return null;
+
+        let letter = letters.find((l) => l.id === currentLetterId);
+        if (!letter) {
+            if (!hasDraftContent(title, leftText, rightText)) return null;
+            const now = Date.now();
+            letter = {
+                id: currentLetterId, title, leftText, rightText,
+                createdAt: parseInt(currentLetterId, 10) || now,
+                updatedAt: now
+            };
+            letters.unshift(letter);
+        } else {
+            if (!letter.createdAt) letter.createdAt = parseInt(letter.id, 10) || Date.now();
+            letter.title = title;
+            letter.leftText = leftText;
+            letter.rightText = rightText;
+            letter.updatedAt = Date.now();
+        }
+        return letter;
+    }
+
+    async function saveCurrentNow() {
+        const letter = buildActiveDraftRecord();
         if (!letter) return;
 
-        if (!letter.createdAt) letter.createdAt = parseInt(letter.id, 10) || Date.now();
-        letter.title = ILW.dom.letterTitleInput.value;
-        letter.leftText = ILW.dom.editorLeft.value;
-        letter.rightText = ILW.dom.editorRight.value;
-        letter.updatedAt = Date.now();
-
-        await ILW.db.saveLetter(letter, letters);
+        await ILW.db.saveLetter(letter, ILW.state.letters);
+        ILW.db.persistFallback(ILW.state.letters);
         ILW.rebuildUserWordCache();
 
         ILW.dom.saveIndicator.classList.remove('opacity-0');
@@ -94,30 +129,44 @@ window.ILW = window.ILW || {};
         }, 850);
     }
 
+    // Runs synchronously when app/tab is suddenly closed or backgrounded
+    function emergencyFlushSync() {
+        if (ILW.dom.editorView.classList.contains('hidden')) return;
+        const letter = buildActiveDraftRecord();
+        if (!letter) return;
+        ILW.db.saveEmergencyDraftSync(letter);
+        ILW.db.persistFallback(ILW.state.letters);
+        ILW.db.saveLetter(letter, ILW.state.letters);
+    }
+
     function setupAutoSave() {
         const triggerSave = () => {
             clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveCurrentNow, 450);
+            saveTimeout = setTimeout(saveCurrentNow, 350);
         };
         ILW.dom.letterTitleInput.addEventListener('input', triggerSave);
         ILW.dom.editorLeft.addEventListener('input', triggerSave);
         ILW.dom.editorRight.addEventListener('input', triggerSave);
-        ILW.dom.editorLeft.addEventListener('paste', () => setTimeout(saveCurrentNow, 60));
-        ILW.dom.editorRight.addEventListener('paste', () => setTimeout(saveCurrentNow, 60));
+        ILW.dom.editorLeft.addEventListener('paste', () => setTimeout(saveCurrentNow, 50));
+        ILW.dom.editorRight.addEventListener('paste', () => setTimeout(saveCurrentNow, 50));
+
+        window.addEventListener('pagehide', emergencyFlushSync);
+        window.addEventListener('beforeunload', emergencyFlushSync);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') emergencyFlushSync();
+        });
     }
 
     async function createNewLetter() {
         await saveCurrentNow();
-        const now = Date.now();
-        const newLetter = {
-            id: now.toString(), title: '', leftText: '', rightText: '',
-            createdAt: now, updatedAt: now
-        };
-        ILW.state.letters.unshift(newLetter);
-        await ILW.db.saveLetter(newLetter, ILW.state.letters);
-        loadLetterIntoEditors(newLetter.id);
+        ILW.state.currentLetterId = Date.now().toString();
+        ILW.dom.letterTitleInput.value = '';
+        ILW.dom.editorLeft.value = '';
+        ILW.dom.editorRight.value = '';
+        if (ILW.suggestions) ILW.suggestions.hide();
         ILW.ui.renderAllLists();
         ILW.showToast('file-plus');
+        ILW.dom.editorLeft.focus();
     }
 
     async function selectLetter(id) {
@@ -149,50 +198,26 @@ window.ILW = window.ILW || {};
         ILW.state.letters = ILW.state.letters.filter((l) => l.id !== id);
         await ILW.db.deleteLetter(id, ILW.state.letters);
 
-        if (ILW.state.letters.length === 0) {
-            const now = Date.now();
-            const fresh = { id: now.toString(), title: '', leftText: '', rightText: '', createdAt: now, updatedAt: now };
-            ILW.state.letters.push(fresh);
-            await ILW.db.saveLetter(fresh, ILW.state.letters);
-            loadLetterIntoEditors(fresh.id);
-        } else if (ILW.state.currentLetterId === id) {
-            loadLetterIntoEditors(ILW.state.letters[0].id);
+        if (ILW.state.currentLetterId === id) {
+            if (ILW.state.letters.length > 0) {
+                loadLetterIntoEditors(ILW.state.letters[0].id);
+            } else {
+                ILW.state.currentLetterId = Date.now().toString();
+                ILW.dom.letterTitleInput.value = '';
+                ILW.dom.editorLeft.value = '';
+                ILW.dom.editorRight.value = '';
+            }
         }
         ILW.rebuildUserWordCache();
         ILW.ui.renderAllLists();
         ILW.showToast('trash-2');
     }
 
-    function downloadLetterById(id) {
-        ILW.state.openDropdownId = null;
-        ILW.homeGrid.render();
-        const letter = ILW.state.letters.find((l) => l.id === id);
-        if (!letter) return;
-        const combined = letter.rightText ? `${letter.leftText}
-
---------------------
-
-${letter.rightText}` : (letter.leftText || '');
-        const clean = (letter.title || '').trim().replace(/[^a-z0-9_\-\s]/gi, '_');
-        ILW.triggerTextDownload(combined, clean ? `${clean}.txt` : `letter-${letter.id}.txt`);
-    }
-
-    function downloadCurrentLetter() {
-        const left = ILW.dom.editorLeft.value;
-        const right = ILW.dom.editorRight.value;
-        const combined = right ? `${left}
-
---------------------
-
-${right}` : left;
-        const clean = (ILW.dom.letterTitleInput.value || '').trim().replace(/[^a-z0-9_\-\s]/gi, '_');
-        ILW.triggerTextDownload(combined, clean ? `${clean}.txt` : `letter-${Date.now()}.txt`);
-    }
 
     ILW.editor = Object.assign(ILW.editor || {}, {
-        openEditor, goHome, toggleSplitMode, updateModeSwitchIcon,
+        openEditor, startFreshEditor, goHome, toggleSplitMode, updateModeSwitchIcon,
         loadLetterIntoEditors, saveCurrentNow, setupAutoSave,
         createNewLetter, selectLetter, openNoteFromHome, openNoteFromSettings,
-        confirmDeleteLetter, downloadLetterById, downloadCurrentLetter
+        confirmDeleteLetter
     });
 })(window.ILW);
