@@ -6,6 +6,7 @@
     <title>DotNote</title>
     <link rel="icon" type="image/png" href="assets/logo/logo.png">
     <link rel="apple-touch-icon" href="assets/logo/logo.png">
+    <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -165,7 +166,12 @@
             <div class="w-full flex-1 min-h-0 flex flex-col border-t border-zinc-200 dark:border-zinc-800 pt-4">
                 <div id="settings-notes-list" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-44"></div>
             </div>
-            <button id="btn-settings-download" type="button" aria-label="Download Current Letter" class="w-full p-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all shrink-0"><i data-lucide="download" class="w-6 h-6"></i></button>
+            <div class="w-full flex items-center gap-2.5 shrink-0">
+                <button id="btn-settings-download" type="button" aria-label="Download Current Letter" title="Download TXT" class="flex-1 p-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all"><i data-lucide="download" class="w-5 h-5"></i></button>
+                <button id="btn-backup-export" type="button" aria-label="Backup All Notes JSON" title="Export JSON Backup" class="p-3.5 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all"><i data-lucide="database-backup" class="w-5 h-5"></i></button>
+                <button id="btn-backup-import" type="button" aria-label="Restore Backup JSON" title="Import JSON Backup" class="p-3.5 rounded-2xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 flex items-center justify-center shadow-sm active:scale-95 transition-all"><i data-lucide="upload" class="w-5 h-5"></i></button>
+                <input id="backup-import-input" type="file" accept=".json,application/json" class="hidden" />
+            </div>
         </div>
     </div>
 
@@ -192,6 +198,8 @@
     <script defer src="js/db/indexeddb.js"></script>
     <script defer src="js/core/state.js"></script>
     <script defer src="js/core/toast.js"></script>
+    <script defer src="js/core/self-heal.js"></script>
+    <script defer src="js/core/word-learner.js"></script>
     <script defer src="js/ui/home-grid.js"></script>
     <script defer src="js/ui/sidebar-settings.js"></script>
     <script defer src="js/ui/editor-nav.js"></script>

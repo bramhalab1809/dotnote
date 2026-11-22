@@ -120,7 +120,7 @@ window.ILW = window.ILW || {};
 
         await ILW.db.saveLetter(letter, ILW.state.letters);
         ILW.db.persistFallback(ILW.state.letters);
-        ILW.rebuildUserWordCache();
+        if (ILW.learner) { ILW.learner.learnFromText(letter.leftText); ILW.learner.learnFromText(letter.rightText); ILW.learner.save(); }
 
         ILW.dom.saveIndicator.classList.remove('opacity-0');
         clearTimeout(saveIndicatorTimer);
@@ -208,7 +208,7 @@ window.ILW = window.ILW || {};
                 ILW.dom.editorRight.value = '';
             }
         }
-        ILW.rebuildUserWordCache();
+        if (ILW.learner) { ILW.learner.learnFromText(letter.leftText); ILW.learner.learnFromText(letter.rightText); ILW.learner.save(); }
         ILW.ui.renderAllLists();
         ILW.showToast('trash-2');
     }
@@ -216,7 +216,7 @@ window.ILW = window.ILW || {};
 
     ILW.editor = Object.assign(ILW.editor || {}, {
         openEditor, startFreshEditor, goHome, toggleSplitMode, updateModeSwitchIcon,
-        loadLetterIntoEditors, saveCurrentNow, setupAutoSave,
+        loadLetterIntoEditors, saveCurrentNow, setupAutoSave, emergencyFlushSync,
         createNewLetter, selectLetter, openNoteFromHome, openNoteFromSettings,
         confirmDeleteLetter
     });

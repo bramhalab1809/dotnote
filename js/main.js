@@ -48,6 +48,15 @@ window.ILW = window.ILW || {};
         document.getElementById('font-serif-btn').addEventListener('click', () => ILW.ui.setFontFamily('font-serif'));
         document.getElementById('font-mono-btn').addEventListener('click', () => ILW.ui.setFontFamily('font-mono'));
         document.getElementById('btn-settings-download').addEventListener('click', ILW.editor.downloadCurrentLetter);
+        document.getElementById('btn-backup-export').addEventListener('click', () => ILW.heal.exportBackupJSON());
+        const importInput = document.getElementById('backup-import-input');
+        document.getElementById('btn-backup-import').addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                ILW.heal.importBackupJSON(e.target.files[0]);
+                e.target.value = '';
+            }
+        });
 
         // Delete confirmation modal
         document.getElementById('btn-cancel-delete').addEventListener('click', ILW.ui.closeDeleteConfirm);
@@ -89,14 +98,16 @@ window.ILW = window.ILW || {};
 
     async function bootstrap() {
         ILW.cacheDom();
+        ILW.heal.installWatchdog();
         ILW.buildWordIndex();
+        ILW.learner.load();
         ILW.refreshIcons();
         ILW.ui.applySettings();
         bindEvents();
         ILW.initBgDots();
 
         await ILW.db.init();
-        ILW.state.letters = await ILW.db.getAllLetters();
+        ILW.state.letters = ILW.heal.healLettersList(await ILW.db.getAllLetters());
 
         // Recover any draft captured during a sudden app/tab close
         const recovered = ILW.db.consumeEmergencyDraft();
@@ -112,7 +123,10 @@ window.ILW = window.ILW || {};
             ILW.state.letters.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         }
 
-        ILW.rebuildUserWordCache();
+        ILW.learner.learnFromLetters(ILW.state.letters);
+        if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        }
         if (ILW.state.letters.length > 0) {
             ILW.state.currentLetterId = ILW.state.letters[0].id;
             ILW.editor.loadLetterIntoEditors(ILW.state.currentLetterId);

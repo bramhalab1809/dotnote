@@ -9,7 +9,8 @@ window.ILW = window.ILW || {};
         matches: [],
         selectedIndex: 0,
         wordStart: 0,
-        wordEnd: 0
+        wordEnd: 0,
+        prevWord: ''
     };
 
     function hide() {
@@ -20,10 +21,12 @@ window.ILW = window.ILW || {};
     }
 
     function applySelected() {
-        const { activeEditor, matches, selectedIndex, wordStart, wordEnd } = sState;
+        const { activeEditor, matches, selectedIndex, wordStart, wordEnd, prevWord } = sState;
         if (!activeEditor || !matches[selectedIndex]) return;
+        const chosen = matches[selectedIndex];
         activeEditor.focus();
-        activeEditor.setRangeText(matches[selectedIndex] + ' ', wordStart, wordEnd, 'end');
+        activeEditor.setRangeText(chosen + ' ', wordStart, wordEnd, 'end');
+        if (ILW.learner) ILW.learner.recordChoice(chosen, prevWord);
         hide();
         ILW.editor.saveCurrentNow();
     }
@@ -79,38 +82,37 @@ window.ILW = window.ILW || {};
     function computeMatches(editor) {
         const cursorPos = editor.selectionStart;
         const textBefore = editor.value.slice(0, cursorPos);
-        const match = textBefore.match(/([A-Za-z]{2,})$/);
-        if (!match) {
+
+        // Case A: User just typed a space -> predict smart next word (bigram)
+        const nextMatch = textBefore.match(/([A-Za-z]{1,})\s+$/);
+        if (nextMatch && ILW.learner) {
+            const prevWord = nextMatch[1];
+            const predicted = ILW.learner.predictNextWords(prevWord, MAX_SUGGESTIONS);
+            if (predicted.length === 0) {
+                hide();
+                return;
+            }
+            sState.activeEditor = editor;
+            sState.matches = predicted;
+            sState.selectedIndex = 0;
+            sState.wordStart = cursorPos;
+            sState.wordEnd = cursorPos;
+            sState.prevWord = prevWord;
+            render(false);
+            ILW.positionSuggestionBar(editor, cursorPos);
+            return;
+        }
+
+        // Case B: User is typing a word (>= 2 letters) -> frequency + prefix + typo fix
+        const wordMatch = textBefore.match(/(?:([A-Za-z]+)\s+)?([A-Za-z]{2,})$/);
+        if (!wordMatch) {
             hide();
             return;
         }
 
-        const currentWord = match[1];
-        const lower = currentWord.toLowerCase();
-        const key = lower.slice(0, 2);
-        const seen = new Set();
-        const results = [];
-
-        const pushWord = (w) => {
-            if (results.length >= MAX_SUGGESTIONS) return;
-            if (w !== lower && w.startsWith(lower) && !seen.has(w)) {
-                seen.add(w);
-                results.push(w);
-            }
-        };
-
-        const userWords = ILW.state.userWordCache || [];
-        for (let i = 0; i < userWords.length && results.length < MAX_SUGGESTIONS; i++) {
-            pushWord(userWords[i]);
-        }
-
-        const bucket = ILW.WORD_PREFIX_INDEX ? ILW.WORD_PREFIX_INDEX.get(key) : null;
-        if (bucket) {
-            for (let i = 0; i < bucket.length && results.length < MAX_SUGGESTIONS; i++) {
-                pushWord(bucket[i]);
-            }
-        }
-
+        const prevWord = wordMatch[1] || '';
+        const currentWord = wordMatch[2];
+        const results = ILW.learner ? ILW.learner.rankCandidates(currentWord, MAX_SUGGESTIONS) : [];
         if (results.length === 0) {
             hide();
             return;
@@ -122,6 +124,7 @@ window.ILW = window.ILW || {};
         sState.selectedIndex = 0;
         sState.wordStart = cursorPos - currentWord.length;
         sState.wordEnd = cursorPos;
+        sState.prevWord = prevWord;
 
         render(false);
         ILW.positionSuggestionBar(editor, sState.wordStart);
