@@ -1,28 +1,27 @@
-# Iconic Letter Writer (Modular Edition)
+# DotNote
 
-A fast, distraction-free, icon-first letter & dual-pane note writer built for Android, tablets, laptops, and desktop PCs.
+**DotNote** is a distraction-free, icon-first letter and note writer designed for fast, comfortable writing across Android phones, tablets, laptops, and desktop PCs.
 
-## Folder Structure
-- `index.html` — Main HTML layout (works directly by opening in any browser)
-- `assets/logo/` — Place your AI-generated `logo.png` here (`LOGO_PROMPT.txt` included)
-- `css/base.css` — Responsive viewport (`100dvh`), scrollbars, resizer handle
-- `css/animations.css` — Floating-in-air cards, detached air shadows, tilted date stamp
-- `js/config/tailwind-config.js` — Tailwind dark mode & Inter font configuration
-- `js/data/words-part1..3.js` — Split English dictionary + O(1) 2-letter prefix index
-- `js/db/indexeddb.js` — Dedicated IndexedDB engine (`IconicLetterDB`) with `updatedAt` index + safe fallback
-- `js/core/state.js` — Centralized app state, DOM references, safe storage & scoped icon refresher
-- `js/core/toast.js` — Lucide-safe icon toast & Android-safe `.txt` download helper
-- `js/ui/home-grid.js` — Compact top floating draft cards (3-dot placeholder, zero center overlap)
-- `js/ui/sidebar-settings.js` — Sidebar saved list, Settings modal, theme & typography controls
-- `js/ui/editor-nav.js` — Home navigation, Single/Split toggle, letter CRUD & auto-save
-- `js/ui/pane-tools.js` — Clipboard (paste/copy), clear/download pane & touch resizer
-- `js/ui/caret-position.js` — Reused caret mirror & non-overlapping suggestion bar positioning
-- `js/ui/suggestions.js` — Zero-lag 3-visible scrollable suggestion bar with Tab / Shift+Tab / Enter
-- `js/effects/bg-dots.js` — HiDPI interactive dot grid (auto-pauses while editing to eliminate lag)
-- `js/main.js` — App initialization & event binding
+## About DotNote
 
-## Key Performance & Bug Fixes
-1. **Home Icon**: Replaced the back arrow in the editor with a clean Home icon.
-2. **IndexedDB Engine**: Proper `updatedAt` index, transaction guards, and automatic fallback.
-3. **Zero Lag**: Paused background canvas loop in Editor View & hidden tabs, replaced per-keystroke dictionary scans with O(1) prefix buckets, reused a single caret mirror DOM node, and scoped Lucide icon rendering to updated containers.
-4. **Cross-Device Ready**: Full `100dvh` mobile height, non-passive touch split-resizer, non-overlapping header, and Android-safe downloads.
+DotNote keeps your writing space clean and clutter-free. Instead of crowded menus and heavy toolbars, everything works through intuitive icons, smooth floating draft cards, and an interactive dot-grid canvas.
+
+## What DotNote Can Do
+
+- **Single & Split Writing Modes**
+  Write peacefully in a single full-screen notepad, or switch to **Split Mode** (side-by-side on laptops/PCs, top-and-bottom on Android/mobile) with a draggable divider to resize panes freely.
+
+- **Floating Draft Cards on Home**
+  Saved notes appear at the top as compact, air-floating cards with a tilted creation date stamp, clean 3-dot minimal previews for untitled drafts, and a quick options menu to download or delete without overlapping the main action buttons.
+
+- **Smart Inline Word Suggestions**
+  Get instant word completions as you type—combining a built-in English vocabulary with words from your own saved notes. View 3 suggestions at a time, cycle through up to 12 matches with `Tab` / `Shift + Tab` (or swipe/scroll), and insert with `Enter` or a tap.
+
+- **Instant Auto-Save & Offline Storage**
+  Every keystroke and paste automatically saves locally in your browser using IndexedDB (with automatic fallback), so long letters and multiple drafts stay safe without needing an account or internet connection.
+
+- **Quick Pane & Export Tools**
+  Paste, copy, clear, or download individual panes—or export an entire single/split letter directly as a `.txt` file with your custom title.
+
+- **Customizable Reading & Writing Comfort**
+  Switch between **Light** and **Dark** themes, adjust text size (`12px`–`40px`), choose **Sans**, **Serif**, or **Monospace** fonts, and jump directly between saved notes from either the sidebar or the settings panel.
