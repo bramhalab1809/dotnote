@@ -1,0 +1,59 @@
+html, body {
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Scrollbar for distraction-free writing */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.35);
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.65);
+}
+
+/* Smooth view transitions */
+.view-transition {
+    transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+/* Split Resizer Handle */
+.resizer {
+    cursor: col-resize;
+    touch-action: none;
+}
+@media (max-width: 767px) {
+    .resizer {
+        cursor: row-resize;
+    }
+}
+
+/* Constrained Top Floating Shelf above Dead-Center Circles (Zero Overlap) */
+.top-notes-shelf {
+    max-height: calc(50dvh - 108px);
+}
+@media (max-width: 639px) {
+    .top-notes-shelf {
+        max-height: calc(50dvh - 82px);
+    }
+}
+
+/* Hide horizontal scrollbar on compact suggestion track */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

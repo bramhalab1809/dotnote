@@ -1,0 +1,12 @@
+ICONIC LETTER WRITER - AI LOGO PROMPT
+======================================
+
+How to use:
+1. Copy the prompt below into your favorite AI image generator.
+2. Save the generated logo as:
+   assets/logo/logo.png
+3. It is already linked in index.html as the browser tab icon (favicon) and Apple touch icon!
+
+PROMPT:
+-------
+Minimalist modern app icon logo for "Iconic Letter Writer", a floating translucent glass letter card with a crisp indigo-to-violet fountain pen nib and three subtle glowing dots, soft 3D depth with a gentle detached shadow underneath, clean white and soft indigo palette (#4F46E5), rounded squircle app icon shape, flat vector-meets-glassmorphism aesthetic, centered composition, ultra-clean edges, no text, no watermark, 1024x1024.

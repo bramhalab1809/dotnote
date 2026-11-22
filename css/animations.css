@@ -1,0 +1,107 @@
+/* Aesthetic Tilted Date Stamp on Card Corner */
+.date-stamp {
+    transform: rotate(-6deg);
+    transform-origin: bottom left;
+}
+
+/* Levitating Compact Card + Detached Air Shadow */
+@keyframes airLevitate {
+    0%, 100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(0, -7px, 0);
+    }
+}
+
+@keyframes airShadowPulse {
+    0%, 100% {
+        transform: translate3d(-50%, 0, 0) scaleX(1);
+        opacity: 0.42;
+    }
+    50% {
+        transform: translate3d(-50%, 0, 0) scaleX(0.84);
+        opacity: 0.22;
+    }
+}
+
+.floating-card-wrap {
+    position: relative;
+    display: inline-flex;
+    padding-bottom: 14px;
+}
+
+.floating-card-wrap::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 1px;
+    width: 76%;
+    height: 9px;
+    border-radius: 9999px;
+    background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.30) 0%, rgba(15, 23, 42, 0.14) 55%, transparent 100%);
+    filter: blur(4px);
+    pointer-events: none;
+    animation: airShadowPulse 4.6s ease-in-out infinite;
+    animation-delay: inherit;
+}
+
+.dark .floating-card-wrap::after {
+    background: radial-gradient(ellipse at center, rgba(99, 102, 241, 0.40) 0%, rgba(0, 0, 0, 0.55) 60%, transparent 100%);
+}
+
+.floating-card {
+    animation: airLevitate 4.6s ease-in-out infinite;
+    animation-delay: inherit;
+    box-shadow:
+        0 10px 22px -8px rgba(79, 70, 229, 0.18),
+        0 4px 10px -3px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.dark .floating-card {
+    box-shadow:
+        0 12px 26px -8px rgba(0, 0, 0, 0.7),
+        0 4px 12px -3px rgba(99, 102, 241, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.floating-card-wrap:hover .floating-card {
+    animation-play-state: paused;
+    transform: translate3d(0, -9px, 0) scale(1.03);
+    box-shadow:
+        0 18px 32px -10px rgba(79, 70, 229, 0.28),
+        0 8px 16px -6px rgba(15, 23, 42, 0.12);
+}
+
+.floating-card-wrap:hover::after {
+    animation-play-state: paused;
+    transform: translate3d(-50%, 0, 0) scaleX(0.76);
+    opacity: 0.2;
+}
+
+.floating-card-wrap.menu-open {
+    z-index: 50 !important;
+}
+.floating-card-wrap.menu-open .floating-card {
+    animation: none !important;
+    transform: translate3d(0, -4px, 0) !important;
+}
+
+/* Center Hero Orbs */
+.hero-orb {
+    box-shadow:
+        0 18px 38px -10px rgba(79, 70, 229, 0.20),
+        0 6px 16px -4px rgba(15, 23, 42, 0.09);
+}
+.dark .hero-orb {
+    box-shadow:
+        0 20px 42px -10px rgba(0, 0, 0, 0.72),
+        0 6px 18px -4px rgba(99, 102, 241, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .floating-card, .floating-card-wrap::after {
+        animation: none;
+    }
+}
